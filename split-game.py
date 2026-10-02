@@ -1,3 +1,4 @@
+from random import choice
 class Player:
 
     def __init__(self):
@@ -48,7 +49,20 @@ class Game:
         if receive_hand == 'R' and self.opponent.right == 0:
             return False
         return True
+    
+    def get_legal_moves(self):
+        possible_moves = [('L','L'), ('L','R'), ('R','L'), ('R','R'), ("SPLIT",None)]
+        legal_moves=[]
+        for i,j in possible_moves:
+            if i == "SPLIT":
+                if self.can_split():
+                    legal_moves.append((i,j))
+                continue
 
+            if self.can_use_hand(i) and self.can_hit_hand(j):
+                legal_moves.append((i,j))
+        return legal_moves
+        
     def play_turn(self):
         print(f"{self.player.name}'s turn to PLAY!")
         while True:
@@ -77,11 +91,11 @@ class Game:
                         continue
                     if self.can_hit_hand(receive_hand):
                         if send_hand == 'L':
-                            send_hand = self.player.left
-                            self.player.make_move(send_hand,receive_hand,self.opponent)
+                            attack_value = self.player.left
+                            self.player.make_move(attack_value,receive_hand,self.opponent)
                         elif send_hand == 'R':
-                            send_hand = self.player.right
-                            self.player.make_move(send_hand,receive_hand,self.opponent)
+                            attack_value = self.player.right
+                            self.player.make_move(attack_value,receive_hand,self.opponent)
                         return
                     else:
                         print("YOU CANNOT HIT THAT HAND!!!")
@@ -94,19 +108,47 @@ class Game:
 
 game=Game()
 
+opponent_type = input("Enter opponent type (HUMAN/AI): ")
 game.player1.name = input("Enter Name of Player 1: ")
-game.player2.name = input("Enter Name of Player 2: ")
+if opponent_type.upper() == "AI":  
+    game.player2.name = "AI"
+elif opponent_type.upper() == "HUMAN":
+    game.player2.name = input("Enter Name of Player 2: ")
 
 print("\nGAME START\n")
+print(f"{game.player1.name} vs {game.player2.name}\n")
+if opponent_type.upper() == "HUMAN":
+    while True:
+        
+        game.display()
+        game.play_turn()
 
-while True:
-    game.display()
-    game.play_turn()
+        game.switch_turn()
 
-    if game.opponent.right == 0 and game.opponent.left == 0:
-        print()
-        print("GAME OVER")
-        print(f"{game.player.name} has WON!!!")
-        break
+        if not game.get_legal_moves():
+            game.display()
+            print("GAME OVER")
+            print(f"{game.player.name} has WON!!!")
+            break
 
-    game.switch_turn()
+elif opponent_type.upper() == "AI":
+    while True:
+        if game.player.name == "AI":
+            legal_moves = game.get_legal_moves()
+            if not legal_moves:
+                game.display()
+                print("GAME OVER")
+                print(f"{game.opponent.name} has WON!!!")
+                break
+            send_hand, receive_hand = choice(legal_moves)
+            print(f"AI chooses to use {send_hand} hand to hit {receive_hand} hand.")
+            if send_hand == 'L':
+                attack_value = game.player.left
+                game.player.make_move(attack_value, receive_hand, game.opponent)
+            elif send_hand == 'R':
+                attack_value = game.player.right
+                game.player.make_move(attack_value, receive_hand, game.opponent)
+        elif game.player.name != "AI":
+            game.display()
+            game.play_turn()
+        game.switch_turn()
